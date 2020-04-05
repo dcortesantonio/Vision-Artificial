@@ -11,10 +11,6 @@ PROJECT( Intensities_ITK_OCV )
 ## ============
 
 FIND_PACKAGE( OpenCV REQUIRED )
-FIND_PACKAGE(ITK REQUIRED)
-IF(ITK_FOUND)
-  INCLUDE(${ITK_USE_FILE})
-ENDIF(ITK_FOUND)
 
 ## ================================================
 ## = Do not allow to build inside the source tree =
@@ -40,9 +36,9 @@ MARK_AS_ADVANCED(
 ## = Programs to compile =
 ## =======================
 
-ADD_EXECUTABLE( pr_rescale_int_ocv 02_rescale_intensity_ocv.cxx )
-TARGET_LINK_LIBRARIES( pr_rescale_int_ocv ${OpenCV_LIBS} )
+ADD_EXECUTABLE( main Main.cxx )
+TARGET_LINK_LIBRARIES( main ${OpenCV_LIBS} )
 
-ADD_EXECUTABLE( pr_rescale_int_itk 02_rescale_intensity_itk.cxx )
-TARGET_LINK_LIBRARIES( pr_rescale_int_itk ${ITK_LIBRARIES} )
+ADD_EXECUTABLE( prueba Prueba.cxx )
+TARGET_LINK_LIBRARIES( prueba ${OpenCV_LIBS} )
 
