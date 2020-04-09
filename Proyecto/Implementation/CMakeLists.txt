@@ -35,10 +35,20 @@ MARK_AS_ADVANCED(
 ## =======================
 ## = Programs to compile =
 ## =======================
+include_directories(include)
+# add Coin library
+add_library(
+            Coin
+            Coin.h
+            Coin.cxx
+            )
 
+ADD_EXECUTABLE( proyecto Proyecto.cxx )
+TARGET_LINK_LIBRARIES( proyecto PRIVATE Coin ${OpenCV_LIBS} )
 ADD_EXECUTABLE( main Main.cxx )
 TARGET_LINK_LIBRARIES( main ${OpenCV_LIBS} )
 
 ADD_EXECUTABLE( prueba Prueba.cxx )
 TARGET_LINK_LIBRARIES( prueba ${OpenCV_LIBS} )
+
 
