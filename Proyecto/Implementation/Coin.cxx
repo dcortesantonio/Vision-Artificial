@@ -1,4 +1,5 @@
 #include "Coin.h"
+#include <iostream>
 Coin::Coin(){
 	this->m_AreaMAX =0;
 	this->m_AreaMIN =0;
@@ -27,7 +28,8 @@ double Coin::getValue(){
 }
 
 bool Coin::isTheCoin( double areaImage){
-	if( areaImage <=this->m_AreaMAX && areaImage>=this->m_AreaMIN)
+	std::cout<<" Area "<<areaImage<<" max "<<this->m_AreaMAX <<"min "<<this->m_AreaMIN<<std::endl;
+	if( areaImage <this->m_AreaMAX && areaImage>=this->m_AreaMIN)
         return true;
     else
         return false;

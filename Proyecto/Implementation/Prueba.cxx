@@ -53,28 +53,17 @@ int main( int argc, char** argv )
 
 	vector< vector<Point> > hull(contours.size());
 
-	for(int i = 0; i < contours.size(); i++)
-
-	    convexHull(Mat(contours[i]), hull[i], false);
-// create a blank image (black image)
-
 	Mat drawing = Mat::zeros(threshold_output.size(), CV_8UC3);
 
 	for(int i = 0; i < contours.size(); i++) 
   {
-
-	    //Scalar color_contours = Scalar(0, 255, 0); // green - color for contours
       Scalar color_contours( rand()&0, rand()&255, rand()&0 );
-	    //Scalar color = Scalar(255, 0, 0); // blue - color for convex hull
-      //Scalar color( rand()&255, rand()&0, rand()&0 );
-       
 	    // draw ith contour
 	    drawContours(drawing, contours, i, color_contours, 1, 8, vector<Vec4i>(), 2, Point());
-	    // draw ith convex hull
-	    //drawContours(drawing, hull, i, color, 1, 8, vector<Vec4i>(), 0, Point());
 
 	}
   
+	cout<<">>>Hay "<<contours.size()<<" monedas"<<endl;
   imwrite( basename + "Border.jpg", drawing );
 
   return(0);

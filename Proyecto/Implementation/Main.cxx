@@ -32,7 +32,7 @@ int main(int argc, char** argv )
 
   // Read an image
   
-  Mat src, img_gray, imgBlu,imgCanny,imgThreshold;
+  Mat src, img_gray, imgBlu,imgCanny,imgThreshold,bw,dist;
 
   vector< vector<Point> > contours; // List of contour points (External)
 	vector<Vec4i> hierarchy;
@@ -62,15 +62,45 @@ int main(int argc, char** argv )
         100,                        // low threshold
         200);                        // high threshold
 
-    imwrite( basename + "GaussianBlur.png", imgBlu );
-    imwrite( basename + "__AllBorders.png", imgCanny );   
+ // threshold(imgBlu, bw, 100, 255, THRESH_BINARY | THRESH_OTSU);
+/*
+  Mat M = Mat::ones(3, 3, CV_8U);
+  dilate(bw, bw, M);
+
+
+
+	//imwrite("BIa.png", bw);
+	
+	// Perform the distance transform algorithm
+  distanceTransform(bw, dist, CV_DIST_L2, 5);
+
+  // Normalize the distance image for range = {0.0, 1.0} so we can visualize and threshold it
+  normalize(dist, dist, 0, 1, NORM_MINMAX);
+  //imwrite("DTI.png", dist);
+
+  // Threshold to obtain the peaks, this will be the markers for the foreground objects
+  threshold(dist, dist, 0.4, 1.0, THRESH_BINARY);
+
+   // imwrite("the.png", dist);
+
+	// Dilate a bit the dist image
+  Mat kernel1 = Mat::ones(3, 3, CV_8U);
+  dilate(dist, dist, kernel1);
+  //imwrite("Peaks.png", dist);
+
+  // Create the CV_8U version of the distance image, it is needed for findContours()
+  Mat dist_8u;
+  dist.convertTo(dist_8u, CV_8U);
+	*/
+    //imwrite( basename + "GaussianBlur.png", imgBlu );
+    //imwrite( basename + "__AllBorders.png", imgCanny );   
     
     //Binary Thresholding
     threshold( imgBlu, 
         imgThreshold, 
-        127,   // low threshold
+        100,   // low threshold
         255,   // high threshold
-        THRESH_BINARY_INV);
+        THRESH_BINARY);
       
     imwrite( basename + "_Binary.png", imgThreshold );
 
@@ -83,23 +113,23 @@ int main(int argc, char** argv )
         Point(0, 0));
 
   //Bordes: where i'm going to draw the contour.
-  Mat Borders= Mat::zeros(imgThreshold.size(), CV_8UC3);
+  //Mat Borders= Mat::zeros(imgThreshold.size(), CV_8UC3);
 
  Scalar color_contours( rand()&0, rand()&255, rand()&0 ); //Green
  //Draw the contour.
  for(int i = 0; i < contours.size(); i++) 
-    drawContours(Borders, 
+    drawContours(src, 
         contours, 
         i, 
         color_contours, 
-        1, 
+        5, 
         8, 
-        vector<Vec4i>(),
+        hierarchy,
         2, 
         Point());
 	   
-  
-  imwrite( basename + "_Border.png", Borders );
+  cout<<"nUMERO->"<<contours.size();
+  imwrite( "_Booooorder.png", src );
 
   
 

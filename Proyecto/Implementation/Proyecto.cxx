@@ -1,13 +1,18 @@
+#define _USE_MATH_DEFINES
+ 
+#include <cmath>
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include "Coin.h"
 
-using namespace cv;
-using namespace std;
 
-double getValueImage( vector<Coin *> m_Coins, double m_Area);
+std::string getBaseName(  std::string s);
+cv::Mat generateCirles(cv::Mat markers, std::vector<std::vector<cv::Point> > contours);
+std::vector<cv::Vec3b> generateColors(  std::vector<std::vector<cv::Point> > contours);
+double getValueImage( std::vector<Coin *> m_Coins, double m_Area, cv::Mat src);
+double getTotalValue(std::vector<Coin *> m_Coins,  std::vector<std::vector<cv::Point> > contours, cv::Mat src);
 
 int main(int argc, char** argv )
 {
@@ -20,91 +25,117 @@ int main(int argc, char** argv )
 
   } 
 
-  // Review given command line arguments
+  // Review name of the image.
   std::cout << "-------------------------" << std::endl;
-  for( int a = 0; a < argc; a++ )
-    std::cout << argv[ a ] << std::endl;
+  std::cout << " Read image: "<<argv[ 1 ] << std::endl;
   std::cout << "-------------------------" << std::endl;
 
   // Read an image
-  Mat src;
-  src = imread( argv[1], 1 );
-  stringstream ss( argv[ 1 ] );
-  string basename;
-  getline( ss, basename, '.' );
+  cv::Mat src, re;
+  src = cv::imread( argv[1], 1 );
+  std::string basename = getBaseName( argv[ 1 ]);
 
+  //Resize image 
+  double scale = float(1500)/src.size().width;
+  resize(src, src, cv::Size(0, 0), scale, scale);
+ 
   if ( !src.data )
   {
     std::cerr << "Error: No image data" << std::endl;
     return( -1);
   
-  } // fi
+  } 
   
-  vector<Coin *> m_Coins;
-  
-  m_Coins.push_back(new Coin( 47000, 39000, 200));
-  m_Coins.push_back(new Coin( 26000, 16000, 100));
-  m_Coins.push_back(new Coin( 15000, 7000, 50));
+  //Information of the Coins.
+  std::vector<Coin *> m_Coins;
+  m_Coins.push_back(new Coin( 346, 331, 200));
+  m_Coins.push_back(new Coin( 263, 211.6, 100));
+  m_Coins.push_back(new Coin( 211.6, 5, 50));
   double m_Total;
 
-  Mat bw;
-  cvtColor(src, bw, COLOR_BGR2GRAY);
-  threshold(bw, bw, 0, 255, THRESH_BINARY | THRESH_OTSU);
-	Mat M = Mat::ones(3, 3, CV_8U);
+  cv::Mat bw;
+  cvtColor(src, bw, cv::COLOR_BGR2GRAY);
+  threshold(bw, bw, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+	cv::Mat M = cv::Mat::ones(3, 3, CV_8U);
 	dilate(bw, bw, M);
 	
 	// Perform the distance transform algorithm
-  Mat dist;
+  cv::Mat dist;
   distanceTransform(bw, dist, CV_DIST_L2, 5);
 
   // Normalize the distance image for range = {0.0, 1.0} so we can visualize and threshold it
-  normalize(dist, dist, 0, 1, NORM_MINMAX);
-  
+  normalize(dist, dist, 0, 1, cv::NORM_MINMAX);
 
   // Threshold to obtain the peaks, this will be the markers for the foreground objects
-  threshold(dist, dist, 0.4, 1.0, THRESH_BINARY);
+  threshold(dist, dist, 0.4, 1.0, cv::THRESH_BINARY);
     
 	// Dilate a bit the dist image
-  Mat kernel1 = Mat::ones(3, 3, CV_8U);
+  cv::Mat kernel1 = cv::Mat::ones(3, 3, CV_8U);
   dilate(dist, dist, kernel1);
 
   // Create the CV_8U version of the distance image, it is needed for findContours()
-  Mat dist_8u;
+  cv::Mat dist_8u;
   dist.convertTo(dist_8u, CV_8U);
 	
   // Find total markers
-  vector<vector<Point> > contours;
-  findContours(dist_8u, contours, RETR_TREE, CHAIN_APPROX_NONE );
+  std::vector<std::vector<cv::Point> > contours;
+  cv::findContours(dist_8u, contours, cv::RETR_TREE, cv::CHAIN_APPROX_NONE );
 
   // Create the marker image for the watershed algorithm
-  Mat markers = Mat::zeros(dist.size(), CV_32S);
   // Draw the foreground markers
+  cv::Mat markers = cv::Mat::zeros(dist.size(), CV_32S);
   for (size_t i = 0; i < contours.size(); i++)
   {
-      drawContours(markers, contours, static_cast<int>(i), Scalar(static_cast<int>(i)+1), -1);
+      drawContours(markers, contours, static_cast<int>(i), cv::Scalar(static_cast<int>(i)+1), -1);
   }
+
+
   // Draw the background marker
-  circle(markers, Point(5,5), 1, Scalar(255), -1);
+  circle(markers, cv::Point(5,5), 1, cv::Scalar(255), -1);
 
   // Perform the watershed algorithm
   watershed(src, markers);
 	
-  Mat mark;
+  cv::Mat mark;
   markers.convertTo(mark, CV_8U);
   bitwise_not(mark, mark);
 
-  // Generate random colors
-  vector<Vec3b> colors;
-  for (size_t i = 0; i < contours.size(); i++)
-  {
-      int b = theRNG().uniform(0, 256);
-      int g = theRNG().uniform(0, 256);
-      int r = theRNG().uniform(0, 256);
-      colors.push_back(Vec3b((uchar)b, (uchar)g, (uchar)r));
-  }
+  cv::Mat dst = generateCirles(markers, contours);
+
+  //Get values of coins.
+  m_Total = getTotalValue(m_Coins, contours, src);
+	std::cout<<"Hay "<<contours.size()<<" monedas"<<", para un total de :"<<m_Total<<"$ "<<std::endl;
+
+ 
+
+  // Visualize the final images
+  imwrite(basename+"FinalResult.png", dst); // Circles
+  imwrite(basename+"FinalValue.png", src);  // Values and final result
+
+  return 0;
+
+}
+
+
+std::string getBaseName(  std::string s)
+{
+  
+  std::stringstream ss( s );
+  std::string basename;
+  getline( ss, basename, '.' );
+         
+  return basename;
+  
+}
+
+cv::Mat generateCirles(cv::Mat markers, std::vector<std::vector<cv::Point> > contours)
+{
+  
+   // Generate random colors
+  std::vector<cv::Vec3b> colors = generateColors(contours);
 
   // Create the result image
-  Mat dst = Mat::zeros(markers.size(), CV_8UC3);
+  cv::Mat dst = cv::Mat::zeros(markers.size(), CV_8UC3);
   // Fill labeled objects with random colors
   for (int i = 0; i < markers.rows; i++)
   {
@@ -113,41 +144,29 @@ int main(int argc, char** argv )
           int index = markers.at<int>(i,j);
           if (index > 0 && index <= static_cast<int>(contours.size()))
           {
-              dst.at<Vec3b>(i,j) = colors[index-1];
+              dst.at<cv::Vec3b>(i,j) = colors[index-1];
           }
       }
   }
-	
- 
-
-  // Visualize the final image
-  imwrite(basename+"FinalResult.png", dst);
-   
-
-  for (unsigned int i = 0;  i < contours.size();  i++)
-  {
-    //std::cout << "# of contour points: " << contours[i].size() << std::endl;
-    //std::cout << " Area: " << contourArea(contours[i])<< std::endl;
-    double value = getValueImage(m_Coins, contourArea(contours[i]));
-    m_Total+=value;
-    char str[200];
-    sprintf(str,"Value : %0.0lf$",value);
-    putText(src, str ,contours[i][0], FONT_HERSHEY_DUPLEX, 0.8, Scalar(0,255,0), 2);
-  }
+  return dst;
   
-  char str[200];
-  sprintf(str,"TOTAL: %0.0lf",m_Total);
-  putText(src, str ,Point((src.cols/2)-150,1000), FONT_HERSHEY_DUPLEX, 02, Scalar(0,255,0), 2);
-
-	cout<<"Hay "<<contours.size()<<" monedas";
-  cout<<", para un total de :"<<m_Total<<"$ "<<endl;
-  imwrite(basename+"FinalValue.png", src);
-  return 0;
-
+}
+std::vector<cv::Vec3b> generateColors(  std::vector<std::vector<cv::Point> > contours)
+{
+   std::vector<cv::Vec3b> colors;
+  for (size_t i = 0; i < contours.size(); i++)
+  {
+      int b = cv::theRNG().uniform(0, 256);
+      int g = cv::theRNG().uniform(0, 256);
+      int r = cv::theRNG().uniform(0, 256);
+      colors.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+  }
+         
+  return colors;
+  
 }
 
-
-double getValueImage( vector<Coin *> m_Coins, double m_Area)
+double getValueImage( std::vector<Coin *> m_Coins, double m_Area)
 {
   for(int i =0; i<3; i++)
      if( m_Coins[i]->isTheCoin(m_Area))
@@ -156,3 +175,27 @@ double getValueImage( vector<Coin *> m_Coins, double m_Area)
   return 0;
   
 }
+
+
+double getTotalValue(std::vector<Coin *> m_Coins,  std::vector<std::vector<cv::Point> > contours, cv::Mat src)
+{
+  double m_Total=0;
+   for (unsigned int i = 0;  i < contours.size();  i++)
+  {
+   
+    double equiDiameter = sqrt( (4 * cv::contourArea(contours[i])) / M_PI);
+    double value = getValueImage(m_Coins, equiDiameter);
+    m_Total+=value;
+    char str[200];
+    sprintf(str,"Value: %0.0lf$", value);
+    putText(src, str ,contours[i][0], cv::FONT_HERSHEY_DUPLEX, 0.9, cv::Scalar(0,255,0), 2);
+  }
+
+  char str[200];
+  sprintf(str,"TOTAL: %0.0lf",m_Total);
+  putText(src, str ,cv::Point((src.cols/2)-170,(4*src.rows/5)), cv::FONT_HERSHEY_DUPLEX, 02, cv::Scalar(0,255,0), 2);
+         
+  return m_Total;
+  
+}
+
