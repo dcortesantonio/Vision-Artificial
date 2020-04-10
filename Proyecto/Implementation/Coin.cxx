@@ -1,35 +1,33 @@
 #include "Coin.h"
-#include <iostream>
 Coin::Coin(){
-	this->m_AreaMAX =0;
-	this->m_AreaMIN =0;
+	this->m_DiameterMax  =0;
+	this->m_DiameterMin =0;
     this->m_Value=0;
 }
 Coin::~Coin(){
 }
 
-Coin::Coin(double m_AreaMAX,double m_AreaMIN, double m_Value)
+Coin::Coin(double m_DiameterMax ,double m_DiameterMin, double m_Value)
 {
 	
-	this->m_AreaMAX = m_AreaMAX;
-	this->m_AreaMIN =m_AreaMIN;
+	this->m_DiameterMax  = m_DiameterMax ;
+	this->m_DiameterMin =m_DiameterMin;
     this->m_Value= m_Value;
 }
 
 
-double Coin::getAreaMAX(){
-	return this->m_AreaMAX;
+double Coin::getDiameterMax(){
+	return this->m_DiameterMax ;
 }
-double Coin::getAreaMIN(){
-	return this->m_AreaMIN;
+double Coin::getDiameterMin(){
+	return this->m_DiameterMin;
 }
 double Coin::getValue(){
 	return this->m_Value;
 }
 
-bool Coin::isTheCoin( double areaImage){
-	std::cout<<" Area "<<areaImage<<" max "<<this->m_AreaMAX <<"min "<<this->m_AreaMIN<<std::endl;
-	if( areaImage <this->m_AreaMAX && areaImage>=this->m_AreaMIN)
+bool Coin::isTheCoin( double diameterImage){
+	if( diameterImage <this->m_DiameterMax  && diameterImage>=this->m_DiameterMin)
         return true;
     else
         return false;

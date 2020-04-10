@@ -5,18 +5,18 @@ class Coin
 {
 
 private:
-double m_AreaMAX;
-double m_AreaMIN;
+double m_DiameterMax;
+double m_DiameterMin;
 double m_Value;
 
 public:
 Coin();
-Coin(double m_AreaMAX,double m_AreaMIN, double m_Value);
+Coin(double m_DiameterMax,double m_DiameterMin, double m_Value);
 virtual ~Coin();
-double getAreaMAX();
-double getAreaMIN();
+double getDiameterMax();
+double getDiameterMin();
 double getValue();
-bool isTheCoin( double m_AreaImage);
+bool isTheCoin( double diameterImage);
 	
 };
 
